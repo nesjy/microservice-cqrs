@@ -8,27 +8,16 @@ import { KafkaModule } from './kafka/kafka.module';
 import { customerKafkaConfig } from './customer-kafka.config';
 import { KafkaService } from './kafka/kafka.service';
 import { EventSourcingModule } from 'event-sourcing-nestjs';
-import { MongooseModule } from '@nestjs/mongoose';
+import { CustomerController } from './customer/customer.controller';
+import { CustomerModule } from './customer/customer.module';
 
 
 @Module({
   imports: [
-    CqrsModule,
-    KafkaModule.register(customerKafkaConfig, 'customer-orders-customer')
+    CustomerModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, ...CustomerCommandHandlers, CustomerAdapter],
-})
-export class AppModule implements OnModuleInit {
-  constructor(
-    private readonly command$: CommandBus,
-    private readonly event$: EventBus,
-    private readonly kafkaService: KafkaService,
-  ) {}
+  controllers: [],
+  providers: [AppService],
 
-  async onModuleInit() {
-    this.kafkaService.createProducer();
-    this.event$.publisher = this.kafkaService;
-    this.command$.register(CustomerCommandHandlers);
-  }
-}
+})
+export class AppModule {}

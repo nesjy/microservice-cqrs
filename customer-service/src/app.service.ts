@@ -7,19 +7,5 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly commandBus: CommandBus) {}
 
-  async createCustomer(
-    createCustomerDto: CreateCustomerDto,
-  ): Promise<{ id: string }> {
-    const id = uuid();
-    await this.commandBus.execute(
-      new CreateCustomerCommand(id, createCustomerDto),
-    );
-    return { id };
-  }
-
-  async deleteCustomer(id: string): Promise<void> {
-    return this.commandBus.execute(new DeleteCustomerCommand(id));
-  }
 }
