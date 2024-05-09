@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler, EventPublisher } from '@nestjs/cqrs';
-import { CreateOrderCommand } from '../commands/create-order.command';
 import { Logger } from '@nestjs/common';
 import { OrderAdapter } from 'src/order.adapter';
+import { CreateOrderCommand } from '../commands/create-order.command';
 
 @CommandHandler(CreateOrderCommand)
 export class CreateOrderCommandHandler

@@ -7,12 +7,13 @@ import { OrderCommandHandlers } from './commands-handlers';
 import { OrderAdapter } from 'src/order.adapter';
 import { KafkaModule } from './kafka/kafka.module';
 import { KafkaService } from './kafka/kafka.service';
+import { MessagePattern } from '@nestjs/microservices';
+import { OrderEventKafkaHandlers } from './event/order-events.kafka-handlers';
 
 @Module({
   imports: [
     CqrsModule,
     KafkaModule.register(customerKafkaConfig, 'customer-orders-customer'),
-    OrderModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, ...OrderCommandHandlers, OrderAdapter],
@@ -26,11 +27,13 @@ export class OrderModule implements OnModuleInit {
 
   async onModuleInit() {
     this.kafkaService.createConsumer({
-      groupId: 'orders',
+      groupId: 'customer-orders-customer',
     });
     this.kafkaService.createProducer();
+    this.kafkaService.setEventHandlers('CreateCustomerEvent');
     this.kafkaService.bridgeEventsTo(this.event$.subject$);
     this.event$.publisher = this.kafkaService;
-    this.command$.register(OrderCommandHandlers);
+    this.command$.register();
   }
+
 }

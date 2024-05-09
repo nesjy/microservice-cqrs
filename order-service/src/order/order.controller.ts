@@ -23,11 +23,14 @@ export class OrderController {
     deleteOrder(@Param('id') id: string): Promise<void> {
       return this.orderService.deleteOrder(id);
     }
-    
 
     @MessagePattern('customer-orders-customer')
-    CustomerOrder(@Payload() message: CustomerOrderMessage, @Ctx() context: KafkaContext): any {
-      console.log(`Topic: ${context.getTopic()}`);
+    async handleKafkaMessage(
+      @Payload() message: CustomerOrderMessage,
+      @Ctx() context: KafkaContext
+    ) {
+      console.log(5555555);
       
     }
+
 }

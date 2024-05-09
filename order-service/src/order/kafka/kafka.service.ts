@@ -86,8 +86,10 @@ export class KafkaService
             `Bridged event payload: ${JSON.stringify(parsed)}`,
           );
           const { eventType, ...params } = parsed;
-          const event = this.eventHandlers[eventType](...Object.values(params));
+
+          const event = this.eventHandlers['CreateCustomerEvent'];
           subject.next(event);
+          // subject.next(event);
         },
       });
     } catch (error) {
