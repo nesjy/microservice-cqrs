@@ -1,36 +1,35 @@
-import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { Body, Controller, Post } from '@nestjs/common';
+import {
+  EventPattern,
+  MessagePattern,
+  Payload,
+  Transport,
+} from '@nestjs/microservices';
+import { PlaceOrderDto } from './order.interface';
 import { OrderService } from './order.service';
-import { Ctx, KafkaContext, MessagePattern, Payload } from '@nestjs/microservices';
 
-interface CustomerOrderMessage {
-  customerId: string; // Or number, depending on your data type
-  createCustomerDto: any;
-  // Other relevant customer order properties
-}
-@Controller('order')
+@Controller('orders')
 export class OrderController {
-    constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) {}
 
-    @Post()
-    createOrder(
-      @Body() createOrderDto: CreateOrderDto,
-    ): Promise<{ id: string }> {
-      return this.orderService.createOrder(createOrderDto);
-    }
-  
-    @Delete('/:id')
-    deleteOrder(@Param('id') id: string): Promise<void> {
-      return this.orderService.deleteOrder(id);
-    }
+  // @MessagePattern({ cmd: 'createOrder' }, Transport.RMQ)
+  @Post()
+  async createOrder(@Body() createOrderDto: PlaceOrderDto) {
+    
+    return await this.orderService.createOrder(createOrderDto);
+  }
 
-    @MessagePattern('customer-orders-customer')
-    async handleKafkaMessage(
-      @Payload() message: CustomerOrderMessage,
-      @Ctx() context: KafkaContext
-    ) {
-      console.log(5555555);
-      
-    }
+  @EventPattern({ cmd: 'orderConfirmed' }, Transport.RMQ)
+  async handleOrderConfirmedEvent(
+    @Payload() payload: { orderId: number },
+  ): Promise<void> {
+    await this.orderService.handleOrderConfirmedEvent(payload);
+  }
 
+  @EventPattern({ cmd: 'orderCancelled' }, Transport.RMQ)
+  async handleOrderCancelledEvent(
+    @Payload() payload: { orderId: number },
+  ): Promise<void> {
+    await this.orderService.handleOrderCancelledEvent(payload);
+  }
 }

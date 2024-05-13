@@ -1,25 +1,38 @@
 import { Injectable } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
-import { v4 as uuid } from 'uuid';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { CreateOrderCommand } from './commands/create-order.command';
-import { DeleteOrderCommand } from './commands/delete-order.command';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { OrderEntity } from '../entities';
+import {
+  CancelOrderCommand,
+  ConfirmOrderCommand,
+  CreateOrderCommand,
+} from './commands';
+import { PlaceOrderDto } from './order.interface';
+import { FindOneOrderQuery } from './queries';
 
 @Injectable()
 export class OrderService {
-    constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
-    async createOrder(
-      createOrderDto: CreateOrderDto,
-    ): Promise<{ id: string }> {
-      const id = uuid();
-      await this.commandBus.execute(
-        new CreateOrderCommand(id, createOrderDto),
-      );
-      return { id };
-    }
-  
-    async deleteOrder(id: string): Promise<void> {
-      return this.commandBus.execute(new DeleteOrderCommand(id));
-    }
+  async createOrder(placeOrderDto: PlaceOrderDto) {
+    return await this.commandBus.execute(new CreateOrderCommand(placeOrderDto));
+  }
+
+  async findOne(orderId: number): Promise<OrderEntity> {
+    return await this.queryBus.execute(new FindOneOrderQuery(orderId));
+  }
+
+  async handleOrderConfirmedEvent(payload: { orderId: number }): Promise<void> {
+    return await this.commandBus.execute(
+      new ConfirmOrderCommand(payload.orderId),
+    );
+  }
+
+  async handleOrderCancelledEvent(payload: { orderId: number }): Promise<void> {
+    return await this.commandBus.execute(
+      new CancelOrderCommand(payload.orderId),
+    );
+  }
 }

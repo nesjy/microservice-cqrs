@@ -1,25 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
-import { CreateCustomerCommand } from 'src/commands/create-customer.command';
-import { DeleteCustomerCommand } from 'src/commands/delete-customer.command';
-import { CreateCustomerDto } from 'src/dto/create-customer.dto';
-import { v4 as uuid } from 'uuid';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CustomerEntity } from '../entities';
+import {
+  CompensateProcessPaymentCommand,
+  CreateCustomerCommand,
+  ProcessPaymentCommand,
+} from './commands';
+import { CreateCustomerDto } from './customer.interface';
+import { FindOneCustomerQuery } from './queries';
 
 @Injectable()
 export class CustomerService {
-    constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
+
+  async findOne(id: number): Promise<CustomerEntity> {
+    return await this.queryBus.execute(new FindOneCustomerQuery(id));
+  }
 
   async createCustomer(
     createCustomerDto: CreateCustomerDto,
-  ): Promise<{ id: string }> {
-    const id = uuid();
-    await this.commandBus.execute(
-      new CreateCustomerCommand(id, createCustomerDto),
+  ): Promise<CustomerEntity> {
+    return await this.commandBus.execute(
+      new CreateCustomerCommand(createCustomerDto),
     );
-    return { id };
   }
 
-  async deleteCustomer(id: string): Promise<void> {
-    return this.commandBus.execute(new DeleteCustomerCommand(id));
+  async processPayment(payload: {
+    customerId: number;
+    totalAmount: number;
+  }): Promise<boolean> {
+    return await this.commandBus.execute(
+      new ProcessPaymentCommand(payload.customerId, payload.totalAmount),
+    );
+  }
+
+  async compensateProcessPayment(payload: {
+    customerId: number;
+    totalAmount: number;
+  }): Promise<boolean> {
+    return await this.commandBus.execute(
+      new CompensateProcessPaymentCommand(
+        payload.customerId,
+        payload.totalAmount,
+      ),
+    );
   }
 }

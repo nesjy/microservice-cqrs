@@ -1,23 +1,28 @@
-import { Module, OnModuleInit } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { CommandBus, CqrsModule, EventBus } from '@nestjs/cqrs';
-import { CustomerCommandHandlers } from './commands-handlers';
-import { CustomerAdapter } from './customer.adapter';
-import { KafkaModule } from './kafka/kafka.module';
-import { customerKafkaConfig } from './customer-kafka.config';
-import { KafkaService } from './kafka/kafka.service';
-import { EventSourcingModule } from 'event-sourcing-nestjs';
-import { CustomerController } from './customer/customer.controller';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomerModule } from './customer/customer.module';
-
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule], // Access environment variables here
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'mongodb', // Use environment variable
+        url: 'mongodb://mongoadmin:mongoadmin@localhost:27017/eventstore?directConnection=true&authSource=admin', // Adjust for your database type
+        entities: [__dirname + '/entities/**.entity{.ts,.js}'],
+        migrations: ['src/migrations/migrations/*{.ts,.js}'],
+        logging: true,
+        synchronize: true,
+        migrationsRun: true,
+        migrationsTableName: 'migrations',
+      }),
+    }),
     CustomerModule,
   ],
   controllers: [],
-  providers: [AppService],
-
+  providers: [],
 })
 export class AppModule {}
