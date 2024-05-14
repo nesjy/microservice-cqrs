@@ -9,8 +9,9 @@ import { CreateOrderCommand } from '../impl';
 import { ClientKafka } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { Kafka, Partitioners } from 'kafkajs';
-import { from, lastValueFrom } from 'rxjs';
+import { firstValueFrom, from, lastValueFrom } from 'rxjs';
 import { log } from 'console';
+import { OrderCreatedEvent } from '../../order-create.event';
 
 @CommandHandler(CreateOrderCommand)
 export class CreateOrderCommandHandler
@@ -18,78 +19,34 @@ export class CreateOrderCommandHandler
 {
   constructor(
     @InjectRepository(OrderEntity)
-    private readonly orderRepository: Repository<OrderEntity>,
-    @InjectRepository(OrderItemEntity)
-    private readonly orderItemRepository: Repository<OrderItemEntity>,
+    private readonly orderRepository: Repository<OrderEntity>
   ) {}
 
   async execute({ placeOrderDto }: CreateOrderCommand): Promise<any> {
-    const kafka = new Kafka({
-      brokers: ['localhost:9092'],
-    });
+    try {
+      
+      const orderEntity = await this.orderRepository.save({
+        customerId: placeOrderDto.customerId,
+        productId: placeOrderDto.productId,
+        quantity: placeOrderDto.quantity,
+        price: placeOrderDto.price,
+        status: OrderStatus.Pending,
+      });
 
-    const producer = kafka.producer({
-      createPartitioner: Partitioners.LegacyPartitioner,
-    });
+      const event = new OrderCreatedEvent(orderEntity.id, orderEntity.customerId, placeOrderDto);
 
-    await producer.connect(); 
-    const result = await producer.send({
-      topic: 'customer.get',
-      messages: [
-        {
-          value: JSON.stringify(placeOrderDto),
-        },
-      ],
-    });
-
-    // Convert the result to an Observable
-    const resultObservable = from(result);
-    const consumer = kafka.consumer({ groupId: 'customer' })
-
-    // Use lastValueFrom with the Observable
-    const availbleProducts = await lastValueFrom(resultObservable);
-    console.log(availbleProducts);
-    
- 
-    
-    await producer.disconnect(); // Disconnect the producer
-
-    // try {
-
-    //   const orderEntity = await this.orderRepository.save(
-    //     {
-    //       ...placeOrderDto,
-    //       status: OrderStatus.Pending,
-    //     },
-    //     {
-    //       transaction: false,
-    //     },
-    //   );
-    //   await this.orderItemRepository.save(
-    //     placeOrderDto.items.map((orderItem) => ({
-    //       ...orderItem,
-    //       order: {
-    //         id: orderEntity.id,
-    //       },
-    //     })),
-    //     {
-    //       transaction: false,
-    //     },
-    //   );
-
-    //   const totalAmount = placeOrderDto.items.reduce(
-    //     (prev, current) => prev + current.price,
-    //     0,
-    //   );
-
-    //   return {
-    //     orderId: orderEntity.id,
-    //     customerId: orderEntity.customerId,
-    //     products: placeOrderDto.items,
-    //     totalAmount,
-    //   };
-    // } catch (error) {
-    //   throw new Error(error);
-    // }
+      return {
+        orderId: orderEntity.id,
+        customerId: orderEntity.customerId,
+        products: {
+          productId: placeOrderDto.productId,
+          quantity: placeOrderDto.quantity,
+          price: placeOrderDto.price
+        }
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
   }
+
 }

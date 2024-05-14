@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { OrderEntity } from '../entities';
 import {
@@ -14,9 +14,11 @@ export class OrderService {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    
   ) {}
 
   async createOrder(placeOrderDto: PlaceOrderDto) {
+    
     return await this.commandBus.execute(new CreateOrderCommand(placeOrderDto));
   }
 

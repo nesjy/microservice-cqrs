@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { CreateOrderCommand } from '../impl';
@@ -23,40 +23,19 @@ export class CreateOrderCommandHandler
 
   async execute({ placeOrderDto }: CreateOrderCommand): Promise<any> {
 
-    
-
     try {
-      const orderEntity = await this.orderRepository.save(
-        {
-          ...placeOrderDto,
-          status: OrderStatus.Pending,
-        },
-        {
-          transaction: false,
-        },
-      );
-      await this.orderItemRepository.save(
-        placeOrderDto.items.map((orderItem) => ({
-          ...orderItem,
-          order: {
-            id: orderEntity.id,
-          },
-        })),
-        {
-          transaction: false,
-        },
-      );
-
-      const totalAmount = placeOrderDto.items.reduce(
-        (prev, current) => prev + current.price,
-        0,
-      );
+      const orderEntity = await this.orderRepository.save({
+        customerId: placeOrderDto.customerId,
+        productId: placeOrderDto.productId,
+        quantity: placeOrderDto.quantity,
+        price: placeOrderDto.price,
+        status: OrderStatus.Pending,
+      });
 
       return {
         orderId: orderEntity.id,
         customerId: orderEntity.customerId,
-        products: placeOrderDto.items,
-        totalAmount,
+        products: placeOrderDto,
       };
     } catch (error) {
       throw new Error(error);

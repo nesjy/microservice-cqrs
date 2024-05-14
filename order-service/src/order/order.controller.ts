@@ -1,5 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Inject, Post } from '@nestjs/common';
 import {
+  ClientKafka,
   EventPattern,
   MessagePattern,
   Payload,
@@ -10,12 +11,14 @@ import { OrderService } from './order.service';
 
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    
+  ) {}
 
-  // @MessagePattern({ cmd: 'createOrder' }, Transport.RMQ)
   @Post()
   async createOrder(@Body() createOrderDto: PlaceOrderDto) {
-    
+
     return await this.orderService.createOrder(createOrderDto);
   }
 

@@ -22,6 +22,6 @@ export class OrderItemEntity {
   @Column()
   price: number;
 
-  @ManyToOne(() => OrderEntity, (order) => order.items)
-  order: OrderEntity;
+  // @ManyToOne(() => OrderEntity, (order) => order.items)
+  // order: OrderEntity;
 }

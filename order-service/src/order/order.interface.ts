@@ -5,7 +5,17 @@ export class PlaceOrderDto {
   customerId: number;
 
   @IsNotEmpty()
-  items: OrderItemDto[];
+  @IsNumber()
+  productId: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  quantity: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  price: number;
+
 }
 
 export class OrderItemDto {
